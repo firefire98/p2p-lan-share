@@ -160,13 +160,9 @@ Goal: Send and receive a file between two terminals on the same network.
     - Create a Git repository.
     - Set up a CMakeLists.txt file for a C++20 executable.
     - Write a "Hello, World!" to ensure your toolchain works.
-
 - Task 1.2: Networking Foundation
-
-- Choose and set up Boost.Asio.
-
-- Create a simple TCP "echo" server and client. The client sends a message, and the server sends it back. This proves your basic networking is solid.
-
+    - Choose and set up Boost.Asio.
+    - Create a simple TCP "echo" server and client. The client sends a message, and the server sends it back. This proves your basic networking is solid.
 - Task 1.3: File Sending Logic
     - In your "client" code, add the ability to open a file.
     - Define your transfer protocol (e.g., a simple header). Start with just the filename and file size.
@@ -174,7 +170,6 @@ Goal: Send and receive a file between two terminals on the same network.
         1. Connect to the receiver.
         2. Send the header.
         3.  Read the file in chunks and send each chunk over the network.
-
 - Task 1.4: File Receiving Logic
     - In your "server" code, implement the logic:
         1. Listen for and accept a connection.
