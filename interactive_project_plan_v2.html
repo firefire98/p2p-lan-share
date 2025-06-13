@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Plan: P2P File Transfer App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Cool Slate & Sky Blue -->
+    <!-- Application Structure Plan: The application transforms the linear development report into an interactive, tabbed dashboard. This non-linear structure allows users to freely explore thematic sections: a high-level 'Overview', a visual 'Architecture' diagram, an interactive 'Technology' stack, a chart-based 'Project Plan', and a forward-looking 'Roadmap'. This design prioritizes user-driven discovery over passive reading, breaking down complex information into digestible, interconnected chunks and making the project plan more engaging and understandable. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Project Stages/Timeline -> Goal: Show Change/Progression -> Viz/Presentation: Interactive Horizontal Bar Chart (Gantt-like) -> Interaction: Hover for stage duration, click bar to display detailed tasks for that stage -> Justification: Visually communicates the project's phased timeline far more effectively than a static table, with progressive disclosure of details. -> Library: Chart.js/Canvas.
+        - Report Info: Software Architecture (CPE, UI Layers, etc.) -> Goal: Organize/Show Relationships -> Viz/Presentation: Diagram built with structured HTML and Tailwind CSS -> Interaction: Click on a component block to reveal its detailed description -> Justification: Creates an interactive and accessible diagram of a complex system without using static images or SVG, making it fully responsive and engaging. -> Library/Method: HTML/CSS/Tailwind + JS.
+        - Report Info: Technology Stack (Asio, CMake, etc.) -> Goal: Inform/Compare -> Viz/Presentation: A grid of interactive cards for technologies and a side-by-side comparison for protocols -> Interaction: Click on a technology card to read the rationale for its selection -> Justification: Presents technical choices in a scannable, visually appealing format that encourages exploration. -> Library/Method: HTML/CSS/Tailwind + JS.
+        - Report Info: Roadmap/Extended Features -> Goal: Inform -> Viz/Presentation: A series of content cards -> Interaction: Static display -> Justification: Clearly delineates future work from the core project plan in an organized manner. -> Library/Method: HTML/CSS/Tailwind.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .tab-active {
+            border-color: #3b82f6; /* blue-500 */
+            color: #3b82f6;
+            font-weight: 600;
+        }
+        .tab-inactive {
+            border-color: transparent;
+            color: #4b5563; /* gray-600 */
+        }
+        .content-section {
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+        }
+        .section-hidden {
+            opacity: 0;
+            transform: translateY(20px);
+            display: none;
+        }
+        .section-visible {
+            opacity: 1;
+            transform: translateY(0);
+            display: block;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 250px;
+            max-height: 40vh;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .arch-box {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .arch-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .tech-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .tech-card:hover {
+            border-color: #3b82f6;
+            transform: scale(1.03);
+        }
+        /* Custom animation for detail reveal */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="container mx-auto px-4 py-8 md:py-12">
+        
+        <header class="text-center mb-10 md:mb-16">
+            <h1 class="text-3xl md:text-5xl font-bold text-slate-900">P2P File Transfer Application</h1>
+            <p class="mt-2 md:mt-4 text-lg md:text-xl text-slate-600">An Interactive Development Plan</p>
+        </header>
+
+        <main>
+            <nav class="mb-8 border-b border-slate-200">
+                <ul class="flex flex-wrap -mb-px justify-center text-sm md:text-base font-medium text-center text-slate-500">
+                    <li class="mr-2"><a href="#" id="tab-overview" class="inline-block p-4 border-b-2 rounded-t-lg tab-active" data-tab="overview">Overview</a></li>
+                    <li class="mr-2"><a href="#" id="tab-architecture" class="inline-block p-4 border-b-2 rounded-t-lg tab-inactive" data-tab="architecture">Architecture</a></li>
+                    <li class="mr-2"><a href="#" id="tab-technology" class="inline-block p-4 border-b-2 rounded-t-lg tab-inactive" data-tab="technology">Technology</a></li>
+                    <li class="mr-2"><a href="#" id="tab-plan" class="inline-block p-4 border-b-2 rounded-t-lg tab-inactive" data-tab="plan">Project Plan</a></li>
+                    <li class="mr-2"><a href="#" id="tab-roadmap" class="inline-block p-4 border-b-2 rounded-t-lg tab-inactive" data-tab="roadmap">Roadmap</a></li>
+                </ul>
+            </nav>
+
+            <div id="content-container">
+                <section id="overview" class="content-section section-visible">
+                    <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm">
+                        <h2 class="text-2xl font-bold text-slate-900 mb-4">Project At a Glance</h2>
+                        <p class="text-slate-600 mb-8">This document outlines the development plan for a robust, cross-platform peer-to-peer (P2P) file transfer application. The goal is to create a tool that allows direct file sharing on a LAN via both Command-Line and Web Interfaces, built with modern C++20 and CMake. This interactive dashboard allows you to explore the project's core concepts, architecture, and execution plan.
+                        </p>
+
+                        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div class="bg-slate-50 p-6 rounded-xl">
+                                <h3 class="font-bold text-slate-800 mb-2">Core Functionality</h3>
+                                <ul class="list-disc list-inside text-slate-600 space-y-1">
+                                    <li>Direct P2P File Transfer (LAN)</li>
+                                    <li>C++20 & CMake Build System</li>
+                                    <li>Cross-Platform: Linux & Windows</li>
+                                    <li>Dual Interface: CLI & Web</li>
+                                </ul>
+                            </div>
+                            <div class="bg-slate-50 p-6 rounded-xl">
+                                <h3 class="font-bold text-slate-800 mb-2">Key Technologies</h3>
+                                <ul class="list-disc list-inside text-slate-600 space-y-1">
+                                    <li>Networking: <span class="font-semibold">Asio</span></li>
+                                    <li>Web Backend: <span class="font-semibold">cpp-httplib</span></li>
+                                    <li>Protocol: Custom over <span class="font-semibold">TCP/IP</span></li>
+                                    <li>Security: <span class="font-semibold">OpenSSL</span> (Roadmap)</li>
+                                </ul>
+                            </div>
+                            <div class="bg-slate-50 p-6 rounded-xl md:col-span-2 lg:col-span-1">
+                                <h3 class="font-bold text-slate-800 mb-2">Development Philosophy</h3>
+                                <ul class="list-disc list-inside text-slate-600 space-y-1">
+                                    <li>Modular, Layered Architecture</li>
+                                    <li>Separation of Concerns</li>
+                                    <li>Focus on Extensibility & Maintainability</li>
+                                    <li>Iterative, Phased Development</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="architecture" class="content-section section-hidden">
+                     <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm">
+                        <h2 class="text-2xl font-bold text-slate-900 mb-4">Software Architecture</h2>
+                        <p class="text-slate-600 mb-8">The application is built on a modular, layered architecture to ensure separation of concerns, testability, and maintainability. The Core P2P Engine handles all backend logic, decoupled from the user-facing interfaces. Click on a component below to see its detailed responsibilities and sub-modules.</p>
+                        
+                        <div class="space-y-4 text-center">
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div class="arch-box bg-blue-100 text-blue-800 p-4 rounded-lg border-2 border-blue-200" data-arch="cli">
+                                    <h4 class="font-bold">Command-Line Interface (CLI)</h4>
+                                    <p class="text-sm">Terminal-based interaction</p>
+                                </div>
+                                <div class="arch-box bg-green-100 text-green-800 p-4 rounded-lg border-2 border-green-200" data-arch="web">
+                                    <h4 class="font-bold">Web Interface</h4>
+                                    <p class="text-sm">Browser-based interaction</p>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-center">
+                                <div class="h-8 w-px bg-slate-400"></div>
+                            </div>
+                            
+                            <div class="arch-box bg-slate-100 p-6 rounded-lg border-2 border-slate-200" data-arch="cpe">
+                                <h3 class="text-xl font-bold text-slate-900">Core P2P Engine (CPE)</h3>
+                                <p class="text-slate-600">The heart of the application</p>
+                            </div>
+                            
+                             <div class="flex justify-center">
+                                <div class="h-8 w-px bg-slate-400"></div>
+                            </div>
+
+                            <div class="arch-box bg-purple-100 text-purple-800 p-4 rounded-lg border-2 border-purple-200" data-arch="cpal">
+                                <h4 class="font-bold">Cross-Platform Abstraction Layer (CPAL)</h4>
+                                <p class="text-sm">Handles OS-specific code</p>
+                            </div>
+                        </div>
+
+                        <div id="architecture-details" class="mt-8 p-6 bg-slate-50 rounded-xl min-h-[100px] fade-in">
+                            <p class="text-slate-500 italic text-center pt-8">Select a component to learn more.</p>
+                        </div>
+                    </div>
+                </section>
+                
+                <section id="technology" class="content-section section-hidden">
+                    <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm">
+                        <h2 class="text-2xl font-bold text-slate-900 mb-4">Technology Stack & Protocol Choice</h2>
+                        <p class="text-slate-600 mb-8">The project relies on a carefully selected set of modern C++ libraries to ensure cross-platform compatibility, performance, and developer efficiency. The choice of a custom TCP/IP protocol over FTP was a key architectural decision. Click on a technology card to view the rationale behind its selection.</p>
+                        
+                        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                            <div class="tech-card bg-slate-50 p-6 rounded-xl border-2 border-transparent" data-tech="asio">
+                                <h3 class="font-bold text-slate-800">Asio</h3><p class="text-sm text-slate-500">Core Networking</p>
+                            </div>
+                            <div class="tech-card bg-slate-50 p-6 rounded-xl border-2 border-transparent" data-tech="httplib">
+                                <h3 class="font-bold text-slate-800">cpp-httplib</h3><p class="text-sm text-slate-500">Web Backend</p>
+                            </div>
+                            <div class="tech-card bg-slate-50 p-6 rounded-xl border-2 border-transparent" data-tech="cmake">
+                                <h3 class="font-bold text-slate-800">CMake</h3><p class="text-sm text-slate-500">Build System</p>
+                            </div>
+                            <div class="tech-card bg-slate-50 p-6 rounded-xl border-2 border-transparent" data-tech="openssl">
+                                <h3 class="font-bold text-slate-800">OpenSSL</h3><p class="text-sm text-slate-500">Security (Roadmap)</p>
+                            </div>
+                            <div class="tech-card bg-slate-50 p-6 rounded-xl border-2 border-transparent" data-tech="ftxui">
+                                <h3 class="font-bold text-slate-800">FTXUI / TermOx</h3><p class="text-sm text-slate-500">TUI (Roadmap)</p>
+                            </div>
+                            <div class="tech-card bg-slate-50 p-6 rounded-xl border-2 border-transparent" data-tech="zstd">
+                                <h3 class="font-bold text-slate-800">Zstandard</h3><p class="text-sm text-slate-500">Compression (Roadmap)</p>
+                            </div>
+                        </div>
+
+                         <div id="technology-details" class="mb-12 p-6 bg-slate-100 rounded-xl min-h-[100px] fade-in">
+                            <p class="text-slate-500 italic text-center pt-8">Select a technology to see why it was chosen.</p>
+                        </div>
+
+                        <h3 class="text-xl font-bold text-slate-900 mb-4">Protocol: FTP vs. Custom TCP/IP</h3>
+                         <div class="grid md:grid-cols-2 gap-8">
+                            <div>
+                                <h4 class="font-semibold text-red-600 mb-2">File Transfer Protocol (FTP) - Rejected</h4>
+                                <ul class="list-disc list-inside text-slate-600 space-y-2">
+                                    <li><span class="font-semibold">Complexity:</span> Extensive command set is overkill for simple P2P transfer.</li>
+                                    <li><span class="font-semibold">Overhead:</span> Dual-channel architecture (control/data) can be inefficient.</li>
+                                    <li><span class="font-semibold">Security:</span> Standard FTP is insecure (plain text). FTPS adds complexity with firewalls and certificates.</li>
+                                    <li><span class="font-semibold">Inflexible:</span> Limited ability to add custom P2P-specific messages or features.</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-green-600 mb-2">Custom Protocol over TCP/IP - Chosen</h4>
+                                <ul class="list-disc list-inside text-slate-600 space-y-2">
+                                    <li><span class="font-semibold">Simplicity:</span> Protocol is tailored exactly to the application's needs, reducing bloat.</li>
+                                    <li><span class="font-semibold">Efficiency:</span> A single connection minimizes protocol chatter and connection setup time.</li>
+                                    <li><span class="font-semibold">Streamlined Security:</span> TLS can be layered directly over the single TCP connection, simplifying security integration.</li>
+                                    <li><span class="font-semibold">Full Control:</span> Allows for custom messages, optimized data flow, and easy extension for future features.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="plan" class="content-section section-hidden">
+                    <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm">
+                        <h2 class="text-2xl font-bold text-slate-900 mb-4">Phased Project Plan</h2>
+                        <p class="text-slate-600 mb-8">Development is broken into four distinct stages, allowing for iterative progress and early validation of core components. The chart below visualizes the project timeline. Click on a stage's bar to see its detailed task list and primary deliverables.</p>
+                        
+                        <div class="chart-container">
+                            <canvas id="planChart"></canvas>
+                        </div>
+
+                        <div id="task-details-container" class="mt-8">
+                            <div class="p-6 bg-slate-100 rounded-xl min-h-[100px]">
+                                <p class="text-slate-500 italic text-center pt-8">Select a stage from the chart to view its tasks.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="roadmap" class="content-section section-hidden">
+                     <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm">
+                        <h2 class="text-2xl font-bold text-slate-900 mb-4">Roadmap for Extended Features</h2>
+                        <p class="text-slate-600 mb-8">Following the successful delivery of the core application, several key enhancements are planned to improve usability, security, and efficiency. These features will be developed in subsequent project cycles.</p>
+
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="p-6 bg-slate-50 rounded-xl">
+                                <h3 class="text-lg font-bold text-slate-800 mb-2">Enhanced Security</h3>
+                                <p class="text-slate-600">Implement end-to-end TLS encryption using OpenSSL to protect all data in transit. This will also include peer authentication mechanisms to ensure users are connecting to trusted counterparts.</p>
+                            </div>
+                            <div class="p-6 bg-slate-50 rounded-xl">
+                                <h3 class="text-lg font-bold text-slate-800 mb-2">Text User Interface (TUI)</h3>
+                                <p class="text-slate-600">Develop a rich, interactive terminal interface using a library like FTXUI. This will provide a more advanced user experience than the basic CLI, with features like file browsers and dynamic progress dashboards.</p>
+                            </div>
+                            <div class="p-6 bg-slate-50 rounded-xl">
+                                <h3 class="text-lg font-bold text-slate-800 mb-2">LAN Peer Discovery</h3>
+                                <p class="text-slate-600">Implement an automatic discovery mechanism using UDP broadcasts or multicasts. This will allow peers on the same network to find each other without needing to manually exchange IP addresses, significantly improving usability.</p>
+                            </div>
+                             <div class="p-6 bg-slate-50 rounded-xl">
+                                <h3 class="text-lg font-bold text-slate-800 mb-2">File Compression</h3>
+                                <p class="text-slate-600">Integrate a high-performance compression library like Zstandard (Zstd). Files will be compressed before sending and decompressed on receipt, reducing transfer times and bandwidth usage, especially on slower networks.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+
+    </div>
+
+    <script>
+        (function() {
+            const tabs = document.querySelectorAll('nav a');
+            const contentSections = document.querySelectorAll('.content-section');
+
+            const architectureData = {
+                cli: {
+                    title: 'Command-Line Interface (CLI) Module',
+                    description: 'This module parses user commands from a terminal. It interacts with the Core P2P Engine\'s API to initiate file transfers, check status, and display progress and error messages directly in the console. It serves as the primary tool for scriptable and power-user interaction.'
+                },
+                web: {
+                    title: 'Web Interface Module',
+                    description: 'This module runs an embedded HTTP server to provide a graphical, browser-based UI. It serves static assets (HTML, CSS, JS) and handles API requests from the frontend, translating them into calls to the Core P2P Engine. This makes the application accessible to less technical users.'
+                },
+                cpe: {
+                    title: 'Core P2P Engine (CPE)',
+                    description: 'The CPE is the application\'s core, handling all fundamental P2P logic. Its components include: a <strong>Networking Module</strong> (using Asio for TCP communication), a <strong>File Transfer Protocol Module</strong> (implementing the custom protocol logic), a <strong>File I/O Module</strong> (reading/writing from disk), and a <strong>Transfer Management Module</strong> (tracking transfer states and progress).'
+                },
+                cpal: {
+                    title: 'Cross-Platform Abstraction Layer (CPAL)',
+                    description: 'The CPAL isolates any platform-specific code that is not handled by standard C++ or cross-platform libraries. Its goal is to keep the main codebase clean and platform-agnostic, simplifying the process of supporting Windows, Linux, and potentially other operating systems in the future.'
+                }
+            };
+
+            const technologyData = {
+                asio: { title: "Asio (Core Networking)", description: "Asio is a mature, cross-platform C++ library for network programming. It provides a consistent asynchronous model that simplifies complex socket operations on both Linux (Berkeley sockets) and Windows (Winsock). Its integration with C++20 coroutines makes it ideal for writing clean, efficient, and scalable I/O code." },
+                httplib: { title: "cpp-httplib (Web Backend)", description: "This is a lightweight, header-only C++ HTTP server library. Its simplicity, minimal dependencies, and ease of integration via CMake make it a perfect choice for embedding a web server to host the UI, without adding significant complexity to the project." },
+                cmake: { title: "CMake (Build System)", description: "CMake is the industry-standard build system generator for C++. It allows for defining the project structure and dependencies in a platform-agnostic way, generating native build files (e.g., Makefiles for Linux, Visual Studio projects for Windows) from a single source." },
+                openssl: { title: "OpenSSL (Security)", description: "As the de facto standard for TLS/SSL, OpenSSL will be used to encrypt all data in transit. Asio and cpp-httplib both have integrations for OpenSSL, allowing the P2P TCP stream and the web interface (via HTTPS) to be secured against eavesdropping." },
+                ftxui: { title: "FTXUI / TermOx (TUI)", description: "For a rich Text User Interface, a modern C++ library like FTXUI or TermOx is planned. These libraries offer a widget-based, idiomatic C++ approach to building interactive terminal applications, a significant step up from a basic CLI." },
+                zstd: { title: "Zstandard (Compression)", description: "Zstd is a modern, high-performance compression algorithm. Its extremely fast compression and decompression speeds make it ideal for real-time file compression before transfer, reducing bandwidth usage and transfer times without significant CPU overhead." },
+            };
+            
+            const projectPlanData = {
+                stages: [
+                    { name: 'Stage 1: Core Engine & Basic CLI', duration: 5, color: 'rgba(59, 130, 246, 0.7)' },
+                    { name: 'Stage 2: Web Interface Integration', duration: 5, color: 'rgba(16, 185, 129, 0.7)' },
+                    { name: 'Stage 3: Cross-Platform Refinement', duration: 3.5, color: 'rgba(239, 68, 68, 0.7)' },
+                    { name: 'Stage 4: Documentation & Packaging', duration: 2.5, color: 'rgba(139, 92, 246, 0.7)' },
+                ],
+                tasks: [
+                    {
+                        stage: 'Stage 1: Core Engine & Basic CLI',
+                        deliverable: 'A working Proof-of-Concept for CLI-based LAN file transfer; functional CMake build system for Linux and Windows.',
+                        tasks: [
+                            'Setup project structure and initial CMake configuration for C++20.',
+                            'Implement basic TCP networking layer with Asio (listen, connect).',
+                            'Design and implement the custom application-level protocol (metadata, chunks, acks).',
+                            'Implement file I/O operations for reading from and writing to disk.',
+                            'Develop a basic CLI with send/receive commands.',
+                            'Integrate and test the full transfer process on the LAN.'
+                        ]
+                    },
+                    {
+                        stage: 'Stage 2: Web Interface Integration',
+                        deliverable: 'Software version with a functional web UI for file sharing & transfer initiation on the LAN, alongside CLI.',
+                        tasks: [
+                            'Integrate a C++ HTTP server library (e.g., cpp-httplib).',
+                            'Develop a RESTful API to bridge the web UI and the Core Engine.',
+                            'Create basic HTML, CSS, and JS for the frontend interface.',
+                            'Implement features for sharing files, initiating transfers, and viewing status.',
+                            'Integrate and test web functionalities across major browsers.'
+                        ]
+                    },
+                    {
+                        stage: 'Stage 3: Cross-Platform Refinement',
+                        deliverable: 'A stable, well-tested version with improved reliability and consistent behavior on all target platforms.',
+                        tasks: [
+                            'Conduct comprehensive testing on Windows and resolve platform-specific bugs.',
+                            'Test on other Linux distributions (e.g., Ubuntu LTS) for broader compatibility.',
+                            'Implement robust error handling for network, file, and user input issues.',
+                            'Introduce a logging mechanism for easier debugging.',
+                            'Refactor and clean up the codebase for maintainability.'
+                        ]
+                    },
+                     {
+                        stage: 'Stage 4: Documentation & Packaging',
+                        deliverable: 'Comprehensive user and developer documentation; basic packaged versions for easy distribution.',
+                        tasks: [
+                            'Write user documentation (installation, CLI/Web UI guides, troubleshooting).',
+                            'Create developer documentation (architecture, build process, API overview).',
+                            'Prepare basic distributable packages (e.g., .zip for Windows, .tar.gz for Linux).',
+                            'Investigate CMake\'s CPack module for creating native installers.'
+                        ]
+                    }
+                ]
+            };
+
+
+            function switchTab(e) {
+                e.preventDefault();
+                const clickedTab = e.currentTarget;
+                const targetTabId = clickedTab.dataset.tab;
+
+                tabs.forEach(tab => {
+                    if (tab.dataset.tab === targetTabId) {
+                        tab.classList.remove('tab-inactive');
+                        tab.classList.add('tab-active');
+                    } else {
+                        tab.classList.remove('tab-active');
+                        tab.classList.add('tab-inactive');
+                    }
+                });
+
+                contentSections.forEach(section => {
+                    if (section.id === targetTabId) {
+                        section.classList.remove('section-hidden');
+                        section.classList.add('section-visible');
+                    } else {
+                        section.classList.remove('section-visible');
+                        section.classList.add('section-hidden');
+                    }
+                });
+            }
+            
+            function showArchitectureDetails(e) {
+                const key = e.currentTarget.dataset.arch;
+                const data = architectureData[key];
+                const detailContainer = document.getElementById('architecture-details');
+                
+                if (data) {
+                    detailContainer.innerHTML = `
+                        <h3 class="font-bold text-slate-800 text-lg mb-2">${data.title}</h3>
+                        <p class="text-slate-600">${data.description}</p>
+                    `;
+                }
+            }
+
+            function showTechnologyDetails(e) {
+                const key = e.currentTarget.dataset.tech;
+                const data = technologyData[key];
+                const detailContainer = document.getElementById('technology-details');
+                
+                if (data) {
+                    detailContainer.innerHTML = `
+                        <h3 class="font-bold text-slate-800 text-lg mb-2">${data.title}</h3>
+                        <p class="text-slate-600">${data.description}</p>
+                    `;
+                }
+            }
+
+            function showTaskDetails(stageName) {
+                const data = projectPlanData.tasks.find(t => t.stage === stageName);
+                const container = document.getElementById('task-details-container');
+
+                if (data) {
+                    const taskListHtml = data.tasks.map(task => `<li class="text-slate-600">${task}</li>`).join('');
+                    container.innerHTML = `
+                        <div class="p-6 bg-slate-100 rounded-xl fade-in">
+                            <h3 class="font-bold text-slate-800 text-lg mb-2">${data.stage}</h3>
+                            <p class="text-slate-700 font-semibold mb-2">Primary Deliverable:</p>
+                            <p class="text-slate-600 italic mb-4">${data.deliverable}</p>
+                            <h4 class="font-semibold text-slate-700 mb-2">Key Tasks:</h4>
+                            <ul class="list-disc list-inside space-y-1">${taskListHtml}</ul>
+                        </div>
+                    `;
+                }
+            }
+            
+            tabs.forEach(tab => tab.addEventListener('click', switchTab));
+            document.querySelectorAll('.arch-box').forEach(box => box.addEventListener('click', showArchitectureDetails));
+            document.querySelectorAll('.tech-card').forEach(card => card.addEventListener('click', showTechnologyDetails));
+
+            const ctx = document.getElementById('planChart').getContext('2d');
+            const planChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: projectPlanData.stages.map(s => s.name),
+                    datasets: [{
+                        label: 'Estimated Duration (Weeks)',
+                        data: projectPlanData.stages.map(s => s.duration),
+                        backgroundColor: projectPlanData.stages.map(s => s.color),
+                        borderColor: projectPlanData.stages.map(s => s.color.replace('0.7', '1')),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Estimated Duration (Weeks)'
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                autoSkip: false,
+                                callback: function(value, index, values) {
+                                    const label = this.getLabelForValue(value);
+                                    if (label.length > 25) {
+                                        return label.match(/.{1,25}/g);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Est. ${context.raw} weeks`;
+                                }
+                            }
+                        }
+                    },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const elementIndex = elements[0].index;
+                            const stageName = planChart.data.labels[elementIndex];
+                            showTaskDetails(stageName);
+                        }
+                    }
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
