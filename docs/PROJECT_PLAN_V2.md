@@ -10,7 +10,7 @@ The primary objective of this project is to develop a robust peer-to-peer (P2P) 
 
 ### **1.2. Report Purpose**
 
-This report serves as a comprehensive development plan for the P2P file transfer software. It aims to provide a clear and detailed blueprint covering all critical aspects of the project lifecycle. This includes refined project requirements, a proposed software architecture, an evaluation of technology choices and libraries, a detailed task breakdown into manageable project stages, and an outline for future enhancements. The plan is intended to guide the development process, ensuring a structured approach towards achieving the project's goals.
+This report serves as a comprehensive development plan for the P2P file transfer software.It aims to provide a clear and detailed blueprint covering all critical aspects of the project lifecycle. This includes refined project requirements, a proposed software architecture, an evaluation of technology choices and libraries, a detailed task breakdown into manageable project stages, and an outline for future enhancements. The plan is intended to guide the development process, ensuring a structured approach towards achieving the project's goals.
 
 ### **1.3. Scope**
 
